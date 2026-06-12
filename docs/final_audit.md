@@ -11,5 +11,5 @@
 9. Biggest weaknesses: limited real-world validation and possible overlap with self-modeling / shadow-removal literature.
 10. Paper-readiness judgment: revise.
 11. Exact Downloads PDF path: C:/Users/wangz/Downloads/49.pdf
-12. GitHub URL: pending push
+12. GitHub URL: https://github.com/Jason-Wang313/49_robot_self_shadow_reasoning
 13. Orchestrator desktop copy: pending orchestrator copy
