@@ -1,13 +1,12 @@
 # Child Status 49
 
-Status: building
+Status: complete
 Attempt: 2
-Stage: manuscript drafted and synthetic evidence generated
+Stage: paper written, compiled, copied to Downloads, and pushed
 Commands:
-- Copy-Item ..\01_contact_latency_invariant_manipulation\paper\iclr2026_conference.sty . -Force
-- Copy-Item ..\01_contact_latency_invariant_manipulation\paper\iclr2026_conference.bst . -Force
-- Copy-Item ..\01_contact_latency_invariant_manipulation\paper\math_commands.tex . -Force
-- python scripts/sim_contact_shadow.py
-- wrote main.tex and references.bib
-Failures: none so far
-Recovery: compile next, then patch any LaTeX or bib issues
+- git add .
+- git commit -m "Draft robot self-shadow reasoning paper"
+- gh repo create 49_robot_self_shadow_reasoning --public --source . --remote origin --push
+- Copy-Item main.pdf 'C:\Users\wangz\Downloads\49.pdf' -Force
+Failures: none
+Recovery: none needed
