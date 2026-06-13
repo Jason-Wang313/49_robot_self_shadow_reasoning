@@ -1,6 +1,14 @@
 # Claims
 
-1. Robot-caused shadows/reflections are not merely nuisance pixels; they encode pose/body/lighting interactions that can be tracked as state.
-2. Treating them as state improves consistency for robot self-localization or self-model inference under changing illumination.
-3. Existing shadow removal and cast-shadow reasoning do not solve the robot-centric causal estimation problem.
-4. A minimal causal state is enough to demonstrate the benefit in a controlled simulation/synthetic benchmark.
+Original claim:
+
+- Robot-caused shadows/reflections can encode pose, body, and lighting interactions that should be treated as robot state.
+- A shadow-state controller improves downstream contact behavior under delayed evidence.
+
+V2 result:
+
+The runnable evidence does not support the shadow-specific claim. A non-shadow kinematic latency-advance controller exactly matches the shadow-state controller at every tested latency. At 150 ms, both peak at 48.155 N, while delayed force feedback peaks at 48.539 N.
+
+Unsupported claim:
+
+The repository does not demonstrate that self-shadow state, reflection state, or illumination geometry adds information beyond ordinary kinematic latency compensation.

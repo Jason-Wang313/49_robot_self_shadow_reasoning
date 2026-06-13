@@ -1,15 +1,38 @@
 # Final Audit
 
-1. Chosen thesis: robot-caused shadows and reflections should be inferred as first-class perceptual state.
-2. Field assumption broken: lighting artifacts are nuisance corruption rather than robot-state evidence.
-3. New central mechanism: a causal shadow/reflection latent state coupled to robot pose and self-model inference.
-4. Genuine novelty: shift from removing artifacts or reasoning about external shadows to predicting self-caused illumination effects as state variables.
-5. Closest hostile prior work: Reasoning about shadows in a mobile robot environment; Optical Flow Odometry with Robustness to Self-shadowing; Egocentric visual self-modeling for autonomous robot dynamics prediction and adaptation.
-6. Literature coverage: 1203-paper matrix plus targeted hostile set spanning shadow reasoning, shadow removal, self-modeling, occlusion, and reflection/mirror-adjacent work.
-7. Proof/formal-claim status if any: no formal theorem; the paper relies on a causal modeling claim and a controlled synthetic demonstration.
-8. Strongest evidence: adversarial literature boundary plus a reproducible simulation/synthetic study showing degraded localization/self-modeling when illumination state is ignored.
-9. Biggest weaknesses: limited real-world validation and possible overlap with self-modeling / shadow-removal literature.
-10. Paper-readiness judgment: revise.
-11. Exact Downloads PDF path: C:/Users/wangz/Downloads/49.pdf
-12. GitHub URL: https://github.com/Jason-Wang313/49_robot_self_shadow_reasoning
-13. Orchestrator desktop copy: pending orchestrator copy
+Paper: 49_robot_self_shadow_reasoning
+
+Decision: kill/archive
+
+Submission-hardening version: v2
+
+## Original evidence
+
+- 0 ms latency: delayed 47.899 N, shadow-state 47.899 N.
+- 50 ms latency: delayed 48.032 N, shadow-state 47.714 N.
+- 100 ms latency: delayed 48.281 N, shadow-state 47.910 N.
+- 150 ms latency: delayed 48.539 N, shadow-state 48.155 N.
+
+## V2 non-shadow baseline
+
+- A non-shadow kinematic latency-advance baseline matches the shadow-state controller exactly.
+- At 50 ms latency: shadow-state 47.714 N, non-shadow advance 47.714 N.
+- At 100 ms latency: shadow-state 47.910 N, non-shadow advance 47.910 N.
+- At 150 ms latency: shadow-state 48.155 N, non-shadow advance 48.155 N.
+- Shadow minus non-shadow: 0.000 N at every tested latency.
+
+## Main blocker
+
+The central toy evidence is not shadow-specific. It demonstrates latency compensation from kinematic/contact state, not robot self-shadow reasoning.
+
+## Submission decision
+
+Kill/archive. Do not submit this paper in its current form. A future version needs an actual self-shadow/reflection measurement and a downstream task where the shadow state beats non-shadow kinematic and self-modeling baselines.
+
+## Artifact audit
+
+- Canonical PDF: `C:/Users/wangz/Downloads/49.pdf`
+- Local generated PDF: removed after build
+- Desktop copy: absent
+- Build script: `scripts/build_pdf.ps1`
+- V2 stress script: `scripts/v2_nonshadow_advance_baseline.py`
