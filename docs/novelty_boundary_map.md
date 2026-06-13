@@ -1,7 +1,15 @@
 # Novelty Boundary Map
 
-- Already covered: shadow detection/removal, cast-shadow localization, self-modeling, mirror self-recognition support, occlusion-aware perception.
-- Not yet covered together: a robot-centric latent state for self-generated shadows/reflections that is updated online and used by planning/control.
-- Boundary: if the method only segments shadows before perception, it is not novel enough. The central mechanism must explain and predict self-caused illumination artifacts as state variables.
-- Weak variants: better shadow masks, better detectors, or a larger multimodal model.
-- Strong variant: a causal self-shadow field coupled to body pose and scene geometry, with evidence that the field reduces egocentric self-model and localization errors.
+## Claimed boundary
+
+- Shadow removal treats artifacts as image corruption.
+- Cast-shadow reasoning uses shadows as external scene evidence.
+- Visual self-modeling estimates robot body state but does not explicitly use self-caused shadows or reflections as latent state.
+
+## V2 boundary failure
+
+The runnable experiment does not cross that boundary. The shadow-state controller uses a correction that can be computed from current penetration and velocity without any shadow measurement. A non-shadow kinematic advance baseline therefore matches the result exactly.
+
+## Future requirement
+
+A recoverable version would need a visual artifact variable whose removal degrades performance and whose non-shadow proxy cannot reproduce the same downstream behavior.

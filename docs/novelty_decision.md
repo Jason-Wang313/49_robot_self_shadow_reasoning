@@ -1,7 +1,7 @@
 # Novelty Decision
 
-Chosen thesis: robot-generated shadows and reflections should be modeled as first-class perceptual state, not as preprocessing noise.
+Decision after v2 hardening: kill/archive.
 
-Why this survives the hostile set: existing work either removes shadows, reasons about external cast shadows, or learns self-models without explicit illumination state. The gap is an online, robot-centric state that predicts self-caused illumination artifacts and feeds back into planning/control.
+Reason: The conceptual thesis may be interesting, but the submitted evidence does not support it. The only downstream result is exactly reproduced by a non-shadow kinematic latency-advance baseline.
 
-Decision: proceed with a compact theory-and-evidence paper built around a causal latent shadow/reflection state and a synthetic demonstration of why ignoring it breaks self-localization and self-model consistency.
+The repo should not be submitted as a workshop paper in its current form. A future project would need an actual visual self-shadow variable, measured illumination/self-geometry, and a baseline that cannot solve the task without shadow or reflection state.
