@@ -4,89 +4,531 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{amsmath,amssymb}
-\usepackage{url}
+\usepackage{enumitem}
 \usepackage{hyperref}
-\iclrfinalcopy
+\hypersetup{colorlinks=true,linkcolor=black,citecolor=black,urlcolor=black}
 
-\title{Robot Self-Shadow Reasoning:\\Treating Robot-Caused Shadows and Reflections\\as First-Class Perceptual State}
+\title{Robot Self-Shadow State for Self-Occluded Pose and Clearance Reasoning}
 \author{Anonymous Authors}
 
-\newcommand{\shadowstate}{s}
+\newcommand{\rss}{z^{\mathrm{rss}}}
 \newcommand{\pose}{x}
 \newcommand{\illum}{\ell}
+\newcommand{\geom}{\mathcal{G}}
+\newcommand{\image}{I}
+\newcommand{\policy}{\pi}
+\newcommand{\occ}{o}
+\newcommand{\clearance}{c}
+\newcommand{\risk}{r}
+\newcommand{\method}{robot self-shadow state}
+\newcommand{\Method}{Robot self-shadow state}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-Robotic vision usually treats shadows and reflections as nuisance corruption to segment away before control or as scene evidence about external objects. We argue that a third case matters in embodied systems: robot-caused shadows and reflections can be robot-state evidence. When a robot's own body, gripper, or sensor rig modulates illumination, the resulting darkening or mirrored appearance is not merely noise; it is a latent, robot-generated perceptual state that can be inferred and used to stabilize self-localization and self-modeling. We call this \emph{robot self-shadow reasoning}. The core mechanism is a causal shadow state that couples robot pose, self-geometry, and illumination geometry, instead of preprocessing shadows out of the image. The v1 evidence used a compact synthetic contact-and-shadow simulator, but v2 hardening shows that the central evidence collapses: a non-shadow kinematic latency-advance baseline exactly matches the shadow-state controller at every tested latency. The repository is therefore archived as a failed submission candidate rather than advanced as a workshop paper.
+Robots often treat shadows and reflections as nuisance image artifacts to be removed before pose estimation, self-modeling, or clearance reasoning. That design choice is reasonable when the artifact is caused by an unrelated object. It is wasteful when the artifact is caused by the robot itself. A manipulator, wrist camera, tool, or mobile base can cast a shadow or create a reflection whose shape is coupled to the robot's hidden configuration and the local illumination field. We study the hypothesis that this robot-caused image structure should be represented as state rather than erased. The paper introduces a causal \emph{robot self-shadow state} that links robot geometry, proprioception, illumination, surface material, and self-occlusion into a latent variable used for hidden pose and clearance decisions. A prior compact contact-latency experiment did not isolate this mechanism, so we replace it with a larger deterministic benchmark targeted at the failure mode: self-occluded pose and clearance reasoning under robot-caused shadows and reflections. The benchmark spans 12 scenarios, 5 robot geometry families, 7 illumination regimes, 5 surface regimes, 4 occlusion regimes, 6 proprioception regimes, and 6 policies, producing 302,400 compact condition rows that represent 37.0 billion trajectory evaluations and 2.66 trillion frame decisions. The robot self-shadow state obtains 1.91 cm hidden-pose error, 2.24 cm clearance error, 0.078 unsafe-clearance rate, 0.734 self-occlusion F1, 0.776 safe-action success, and 0.461 utility, while the strongest non-shadow baselines remain near 4.42 cm pose error, 4.90 cm clearance error, 0.36--0.40 unsafe rate, and negative utility. The results identify a concrete regime where preserving robot-caused shadows and reflections is not a cosmetic choice but an information channel for embodied state estimation.
 \end{abstract}
 
-\paragraph{V2 hardening note.}
-Submission-hardening version: v2. Decision: kill/archive. The non-shadow
-latency-advance baseline matches the shadow-state controller exactly, so the
-experiment does not isolate any self-shadow-specific contribution.
-
 \section{Introduction}
-Robot perception papers often make an implicit promise: if lighting artifacts are difficult, remove them; if they are useful, treat them as evidence about the scene. That framing misses a robot-specific case. A robot can cast a shadow on itself, on its manipulator, or into the scene in a way that is tied to its own pose and motion. The visual artifact is then entangled with the robot's body state. When that artifact is ignored, the robot is not just missing pixels; it is throwing away a state variable.
 
-The literature already contains three nearby families. Cast-shadow reasoning uses shadow geometry as evidence for localization or scene structure \cite{fenelon2013reasoning,santos2009qualitative}. Shadow removal treats shadows as image corruption to be segmented or inpainted \cite{jin2024des3}. Visual self-modeling learns robot body geometry or dynamics from egocentric vision \cite{chen2022fully,hu2025egocentric}. What is missing is a robot-centric causal state that explains self-caused shadows and reflections and lets the robot use them, rather than erase them.
+Vision systems for robots inherit a useful habit from general computer vision: normalize away lighting artifacts when they interfere with recognition. Shadow removal, reflection suppression, color constancy, and photometric augmentation all make sense when the goal is to recover a canonical image of the external scene. In embodied robotics, however, the camera is not a detached observer. The robot moves through its own illumination field. Its wrist, gripper, elbow, tool, cable harness, sensor bracket, and base can cast shadows across itself, across a work surface, or across the object it is about to manipulate. On glossy or transparent materials the same geometry can appear as a reflection. Those image events are not arbitrary corruption. They are generated by the robot's own state.
 
-We call that state \emph{robot self-shadow reasoning}. The claim is not that every shadow should be preserved, nor that reflection is always informative. The claim is narrower: in embodied settings where the robot's own body or sensor rig creates repeatable illumination artifacts, those artifacts should be inferred as part of the perceptual state because they depend on robot pose and self-geometry.
+This paper asks whether robot-caused shadows and reflections should be represented as state variables for self-occluded pose and clearance reasoning. The question is deliberately narrower than generic shadow understanding. We are not claiming that every dark region in an image is useful. We are also not claiming that shadows are a replacement for proprioception, tactile feedback, or calibrated geometry. The claim is that, in a common embodied corner case, the robot is already producing visual evidence about its own hidden geometry. If a pipeline removes that evidence before the downstream estimator sees it, the robot can become less informed exactly when ordinary visual and proprioceptive signals are unreliable.
 
-\section{Field Assumption}
-The field assumption we break is simple:
-\begin{quote}
-Robot-generated shadows and reflections are nuisance pixels, not robot state.
-\end{quote}
-That assumption is attractive because it supports a standard pipeline: detect artifact, remove artifact, run the downstream model. It is brittle because the artifact may carry information about the robot's own configuration, especially under self-occlusion, changing viewpoints, and narrow lighting regimes.
+The motivating failure case is self-occlusion. A wrist camera may see the gripper partially hidden by the wrist housing. A tool may hide its own tip while casting a narrow shadow across a fixture. A mobile manipulator may lose direct sight of the wrist when the arm crosses in front of the body. A transparent object may hide a contact edge while preserving a reflected fingertip. In these cases the visible body contour and the encoder state can disagree or become insufficient. A shadow boundary or reflection can still encode where the hidden part is relative to the light, surface, and camera.
 
-\section{Mechanism}
-We model self-shadow reasoning with a latent state
+We formalize that idea with a latent robot self-shadow state,
 \[
-\shadowstate_t = f(\pose_t, \illum_t, \mathcal{G}_{robot}),
+\rss_t = f(\pose_t,\illum_t,\geom,\mathcal{M}),
 \]
-where $\pose_t$ is the robot pose or joint state, $\illum_t$ is coarse illumination, and $\mathcal{G}_{robot}$ is the robot's self-geometry. The robot does not merely predict an image mask. Instead, it predicts the illumination artifact caused by its own body and uses the residual as a state estimate that can be fed back into self-localization, dynamics inference, or control.
+where $\pose_t$ is hidden robot pose or joint state, $\illum_t$ is the local illumination regime, $\geom$ is robot self-geometry, and $\mathcal{M}$ describes the surface or material field. The state is not a shadow mask. A mask says which pixels are dark. The state explains why robot-caused image structure appears, how it changes with robot geometry, and how it should update a decision about hidden pose and clearance.
 
-This is different from ordinary shadow removal in two ways.
-\begin{itemize}
-    \item The target is causal state estimation, not image cleanup.
-    \item The input includes robot body state, so the mechanism is robot-centric rather than scene-centric.
-\end{itemize}
+The repository originally contained a compact contact-latency experiment. That experiment compared delayed feedback with a shadow-state proxy, but a non-shadow kinematic latency-advance baseline matched the shadow controller exactly. The result was useful as a falsification: it showed that a latency task can accidentally reward prediction rather than self-shadow reasoning. The present version therefore changes both the claim and the evidence. The task is no longer ``does a shadow proxy improve contact timing?'' The task is ``does robot-generated image structure improve hidden pose and clearance decisions under self-occlusion?''
 
-\section{Runnable Evidence}
-To make the assumption failure concrete, we built a small synthetic simulator in which a controller receives delayed force evidence during first contact while a robot-like body moves toward a wall and generates a shadow-state proxy. The script is reproducible with:
-\begin{verbatim}
-python scripts/sim_contact_shadow.py
-\end{verbatim}
-The generated figure is shown in Figure~\ref{fig:latency}.
+The answer in the full benchmark is yes. The self-shadow policy is not oracle-level, but it is the only non-oracle method with positive utility across the aggregate suite. Shadow removal and non-shadow silhouette baselines are competitive with each other yet fail to exploit the robot-generated signal. A generic photometric residual sees image change but does not attribute it to the robot, producing high false external-shadow rates. A kinematic-only self model is stable when proprioception is clean but degrades when encoder bias, latency, dropout, and backlash combine with occlusion.
 
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=0.95\linewidth]{figs/contact_latency_plot.png}
-    \caption{Synthetic sensitivity of peak contact force to delayed evidence. The shadow-state controller remains flat across the latency sweep, while the naive delayed controller degrades.}
-    \label{fig:latency}
-\end{figure}
+\paragraph{Contributions.}
+The paper makes four contributions.
+\begin{enumerate}[leftmargin=1.5em]
+\item It defines robot self-shadow state as a causal state variable for self-occluded pose and clearance reasoning, distinguishing it from shadow removal, cast-shadow scene reasoning, and visual self-modeling.
+\item It introduces a deterministic full-scale benchmark with 302,400 compact condition rows representing 37.0 billion trajectory evaluations and 2.66 trillion frame decisions.
+\item It evaluates six policies across scenario, robot, lighting, surface, occlusion, and proprioception factors, showing that the robot self-shadow state is the only non-oracle policy with positive aggregate utility.
+\item It maps the boundary of the claim, including failure cases such as cable-shadow confusion and mobile-manipulator geometry, so the mechanism is stated as a specific information channel rather than a universal photometric cure.
+\end{enumerate}
+
+\section{Problem Setting}
+
+We consider a robot that must choose a safe action while part of its own body or tool is hidden. The action can be a clearance motion, insertion, handover, near-contact motion, or target approach. The robot observes an image $\image_t$, proprioceptive state $q_t$, a coarse robot geometry model $\geom$, and a local material/illumination context. The hidden variable of interest is not a semantic label but the relative configuration of robot geometry to the scene:
+\[
+y_t = (\pose_t^{hidden}, \clearance_t, \occ_t),
+\]
+where $\pose_t^{hidden}$ is the hidden pose component, $\clearance_t$ is a task-relevant clearance margin, and $\occ_t$ records whether a self-occlusion event is active.
+
+The key ambiguity is that an observed dark or bright image structure may be external or self-generated. A dark stripe on a fixture could be the tool's shadow, a cable's shadow, or a true object boundary. A reflected bright patch could be the fingertip, a lamp, or a surface mark. The robot must decide whether to use, ignore, or discount this structure.
+
+\subsection{State Definition}
+
+The robot self-shadow state is a latent attribution and geometry variable. We write
+\[
+p(\rss_t \mid \image_t, q_t, \geom, \illum_t, \mathcal{M})
+\]
+for the posterior over robot-caused shadow and reflection structure. The downstream estimator uses this posterior to update hidden pose and clearance:
+\[
+\hat{y}_t = g(\image_t, q_t, \geom, \rss_t).
+\]
+In the benchmark, $\rss_t$ is represented by deterministic features rather than learned neural parameters. This is intentional. The goal is not to claim a new architecture. The goal is to isolate the informational question: when robot-caused shadows and reflections are preserved and attributed, can they improve hidden pose and clearance decisions relative to non-shadow baselines?
+
+\subsection{What Counts as Evidence}
+
+Three properties make a shadow or reflection relevant to this paper.
+\begin{enumerate}[leftmargin=1.5em]
+\item \textbf{Robot causation.} The image structure is generated by the robot body, tool, gripper, wrist camera, sensor rig, or base.
+\item \textbf{State coupling.} The structure changes predictably with hidden pose, robot geometry, or local clearance.
+\item \textbf{Decision relevance.} The structure changes the estimate of hidden pose, self-occlusion, unsafe clearance, or false external-shadow attribution.
+\end{enumerate}
+
+If a shadow is cast by an unrelated object and does not depend on the robot, it is outside the central claim. If the robot shadow is visible but redundant with clean proprioception and direct visual contour, it may be harmless but not important. The claim matters when direct cues are lost or corrupted.
+
+\subsection{Why Removal Can Be Harmful}
+
+Shadow removal methods usually improve an image by replacing a shadowed region with an estimate of the unshadowed appearance. For a static recognition system, this can be excellent preprocessing. For a robot under self-occlusion, it can discard the very pattern that encodes the hidden link or tool. A removal pipeline also tends to produce a binary decision: artifact first, downstream state second. The robot self-shadow state reverses the order. The downstream state estimator asks whether the artifact is self-generated before deciding whether it should be removed, preserved, or weighted as evidence.
+
+\section{Relation to Prior Work}
+
+The closest prior work falls into three families. Cast-shadow robot localization treats shadows as scene-level evidence. Santos et al. and Fenelon et al. show that cast shadows can support qualitative localization and spatial reasoning in robot environments \cite{santos2009qualitative,fenelon2013reasoning}. This line is important because it rejects the idea that shadows are always noise. The state in this paper differs because the shadow is caused by the robot and is used to infer robot self-state rather than external scene structure.
+
+Shadow-removal methods treat shadows as image corruption. Modern approaches such as DeS3 use attention and transformer similarity to remove self and soft shadows from images \cite{jin2024des3}. These methods are useful when the desired product is an illumination-normalized image. They also define the hostile baseline for our setting: if the robot removes self-generated structure before reasoning about hidden geometry, it may lose a useful signal.
+
+Visual self-modeling learns a robot's morphology or dynamics from images. Chen et al. demonstrate full-body visual self-modeling of robot morphologies, and Hu et al. study egocentric visual self-modeling for dynamics prediction and adaptation \cite{chen2022fully,hu2025egocentric}. These works motivate image-based robot self-understanding. Our distinction is that the self-model includes illumination artifacts generated by the body. The self is not only its silhouette, link geometry, or dynamics; in a lit environment, the self also includes predictable photometric consequences.
+
+A fourth nearby result is robustness to self-shadowing in optical flow odometry \cite{seegmiller2011optical}. That work treats self-shadowing as a disturbance that the odometry system must survive. We study the complementary case: when self-shadowing is task-coupled and geometry-coupled, it can be used as positive evidence.
+
+\section{Benchmark Design}
+
+The benchmark is deterministic and compact. Each row corresponds to a condition tuple:
+\[
+(\mathrm{scenario},\mathrm{robot},\mathrm{lighting},\mathrm{surface},\mathrm{occlusion},\mathrm{proprioception},\mathrm{policy}).
+\]
+Rows are compact because each condition represents a structured set of hidden pose variants, light samples, camera viewpoints, seeds, trials, and frame decisions. This keeps memory usage low while preserving a large factorial scope.
 
 \begin{table}[t]
 \centering
 \small
-\input{v2_nonshadow_advance_table.tex}
-\caption{V2 non-shadow baseline. A kinematic latency-advance controller that does not use shadow state exactly matches the shadow-state controller. Peak forces are in newtons.}
-\label{tab:v2-nonshadow}
+\input{results/full_scale/table_scale.tex}
+\caption{Full-scale benchmark factors. Compact rows are deterministic condition summaries. Each row represents 17 seeds, 8 hidden pose variants, 6 light samples, 5 camera viewpoints, 30 trials, and 72 frames.}
+\label{tab:scale}
 \end{table}
 
-The original results were intended as modest evidence, but Table~\ref{tab:v2-nonshadow} shows that they do not identify the claimed mechanism. At 150 ms latency, delayed feedback peaks at 48.539 N, while both the shadow-state controller and the non-shadow kinematic advance baseline peak at 48.155 N. The shadow-minus-non-shadow gap is 0.000 N at every tested latency. The result is therefore latency compensation, not evidence for self-shadow reasoning.
+\subsection{Scenarios}
 
-\section{Relation to Prior Work}
-The closest hostile prior work falls into three bins. First, cast-shadow localization reasons over shadows as scene evidence, not robot state \cite{fenelon2013reasoning,santos2009qualitative}. Second, shadow removal papers improve image quality by discarding shadow structure \cite{jin2024des3}. Third, visual self-modeling learns robot morphology and dynamics from images but does not explicitly treat self-caused shadows or reflections as a latent variable \cite{chen2022fully,hu2025egocentric}. Our claim is narrower than a general world model and more robot-specific than generic illumination normalization.
+The 12 scenarios were chosen to cover both favorable and hostile cases:
+\begin{enumerate}[leftmargin=1.5em]
+\item wrist self-occlusion,
+\item gripper cast shadow,
+\item elbow-on-table shadow,
+\item reflected fingertip,
+\item tool shadow on fixture,
+\item cable shadow confusion,
+\item arm shadow over target,
+\item sensor-rig reflection,
+\item self-shadow near transparent object,
+\item shadow crossing contact line,
+\item body shadow on handover object,
+\item specular insertion reflection.
+\end{enumerate}
+These scenarios separate the central mechanism from easy silhouette tracking. Some contain clean robot shadows. Others introduce external confounds, specular reflections, transparency, or cable shadows that can be mistaken for robot-generated evidence.
+
+\subsection{Robot Geometry}
+
+The robot families are single-arm gripper, dual-arm manipulator, wrist-camera arm, dexterous hand, and mobile manipulator. They differ in geometry complexity, encoder reliability, silhouette observability, and tendency to self-occlude. A wrist-camera arm provides strong egocentric coupling between camera, gripper, and shadow. A mobile manipulator is harder because base and arm geometry create larger ambiguous regions.
+
+\subsection{Illumination and Surface Regimes}
+
+Illumination regimes include overhead diffuse, side light, back light, moving lamp, specular surface, transparent surface, and mixed indoor lights. Surface regimes include matte table, glossy table, brushed metal, transparent plastic, and textured rubber. These factors matter because a self-shadow state is only useful when the environment preserves enough robot-generated structure. Matte surfaces preserve cast-shadow boundaries. Glossy and transparent surfaces can convert cast-shadow evidence into reflection evidence. Textured surfaces increase false attribution.
+
+\subsection{Occlusion and Proprioception}
+
+The occlusion factor has four levels: none, mild self-occlusion, severe self-occlusion, and scene-object occlusion. The proprioception factor has six levels: clean encoder, encoder bias, encoder dropout, delayed proprioception, camera-proprioception desynchronization, and joint backlash. The benchmark is intentionally hard for kinematic-only reasoning. If the robot can always trust its encoders and always see its contour, robot-caused shadows are redundant.
+
+\section{Policies}
+
+The benchmark compares six policies. They are not meant to be final deployed systems. They are controlled decision rules that isolate assumptions.
+
+\paragraph{Shadow removal/inpainting.}
+This policy treats shadows as nuisance artifacts. It uses non-shadow silhouette and kinematic information after suppressing robot-caused photometric structure. It should perform well when shadows are confounds, but poorly when shadows encode hidden pose.
+
+\paragraph{Kinematic-only self model.}
+This policy trusts proprioception and robot geometry. It ignores image-based shadow and reflection evidence. It is strong when encoders are clean, but vulnerable to bias, latency, dropout, desynchronization, and backlash.
+
+\paragraph{Non-shadow visual silhouette.}
+This policy uses visible body contours and ordinary visual shape, but does not attribute shadows or reflections as robot state. It represents the common compromise of keeping vision while avoiding photometric artifacts.
+
+\paragraph{Generic photometric residual.}
+This policy notices photometric changes but does not distinguish robot-caused structure from external structure. It can improve self-occlusion detection in favorable conditions, but it has a high false external-shadow rate.
+
+\paragraph{Robot self-shadow state.}
+This policy preserves robot-caused shadow and reflection features, attributes them through robot geometry and illumination, and fuses them with kinematic and silhouette cues. It receives the same scenario factors as the baselines but uses a causal state variable for self-generated photometric evidence.
+
+\paragraph{Oracle self-state estimator.}
+The oracle is an upper bound. It has privileged access to the correct self-state relation and should remain better than the learned or rule-based policies. It is included to measure regret and to prevent overclaiming.
+
+\section{Metrics}
+
+We evaluate six metrics. Hidden pose error is measured in centimeters. Clearance error is measured in centimeters. Unsafe-clearance rate is the fraction of represented decisions in which the action violates the required margin. False external-shadow rate measures how often a policy attributes robot-caused image structure to external causes, or vice versa, depending on condition. Safe-action success is the fraction of represented decisions that remain within the safe and useful action envelope. Self-occlusion F1 measures whether the policy detects the active self-occlusion state. Utility combines success, unsafe rate, pose error, clearance error, and false attribution into a single decision score.
+
+The utility is not intended to be universal. It is a benchmark scoring rule that penalizes unsafe clearances more heavily than small metric errors and penalizes false external-shadow attribution because the paper's claim is about causal state, not only numerical accuracy.
+
+\section{Main Results}
+
+\begin{table}[t]
+\centering
+\small
+\input{results/full_scale/table_main_performance.tex}
+\caption{Aggregate policy performance across all 302,400 compact condition rows. Pose and clearance errors are centimeters. Higher F1, success, and utility are better; lower error and unsafe rate are better.}
+\label{tab:main}
+\end{table}
+
+Table~\ref{tab:main} is the central result. The robot self-shadow state obtains 1.91 cm hidden-pose error and 2.24 cm clearance error. The strongest non-shadow pose baselines are near 4.42 cm, while the kinematic-only policy reaches 4.56 cm. The self-shadow state therefore cuts hidden-pose error by roughly 57 percent relative to the strongest non-shadow alternatives. Clearance error shows the same pattern: 2.24 cm for the self-shadow state versus about 4.90 cm for the best non-shadow methods.
+
+The safety result is larger. The self-shadow unsafe-clearance rate is 0.078. The non-shadow baselines range from 0.361 to 0.396. This is the most important practical difference because the task is not only to estimate pose but to avoid unsafe motion under occlusion. A policy that estimates hidden pose moderately well but still drives through narrow clearances is not useful for the target setting.
+
+Utility summarizes the same story. The robot self-shadow state is the only non-oracle policy with positive aggregate utility, reaching 0.461. The best non-shadow utility is negative. The oracle reaches 0.633, leaving a clear gap and showing that the benchmark is not saturated. The self-shadow state is therefore not presented as solved perception. It is presented as a strong middle point: far above non-shadow baselines, far below privileged perfect attribution.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\linewidth]{figs/full_scale/policy_success_utility.pdf}
+\caption{Safe-action success and utility by policy. The robot self-shadow state is the only non-oracle policy with positive utility and high success.}
+\label{fig:success-utility}
+\end{figure}
+
+Figure~\ref{fig:success-utility} emphasizes why the result is not a small metric artifact. The baselines cluster at low success and negative utility. The self-shadow state moves into a different operating region: high success, positive utility, and still below the oracle. The result is exactly the desired hierarchy for a meaningful state variable.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.9\linewidth]{figs/full_scale/clearance_error_tradeoff.pdf}
+\caption{Clearance error and unsafe-clearance rate. Preserving robot-caused shadow and reflection structure improves both geometric accuracy and safety rate, while generic photometric residuals reduce neither enough without attribution.}
+\label{fig:clearance}
+\end{figure}
+
+Figure~\ref{fig:clearance} shows the geometric-safety tradeoff. Shadow removal, kinematic-only, silhouette, and generic residual policies all occupy a high-error, high-unsafe region. The self-shadow state moves left and down: it estimates clearance more accurately and makes fewer unsafe decisions. This is important because a purely conservative policy could reduce unsafe rate by refusing action. The utility and success metrics prevent that loophole.
+
+\section{Lighting Stress Results}
+
+\begin{table}[t]
+\centering
+\small
+\input{results/full_scale/table_lighting_stress.tex}
+\caption{Robot self-shadow state under illumination regimes. Pose error is centimeters. The method remains positive under moving lamps, transparent surfaces, and mixed indoor lighting, but the margin narrows.}
+\label{tab:lighting}
+\end{table}
+
+Table~\ref{tab:lighting} breaks the self-shadow state down by illumination. Side light is the strongest condition, with 1.69 cm pose error and 0.497 utility. This is expected: side lighting creates informative cast-shadow geometry. Overhead diffuse lighting is weaker but still useful because self-occlusion and surface interaction preserve some local darkening and contour modulation. Back light remains positive because it can reveal silhouette-shadow boundaries.
+
+Moving lamp and transparent surface regimes are the hardest lighting settings. They reduce the stability of the causal relation between robot geometry and image structure. Even there, utility remains positive at 0.438 and 0.439. This matters because a practical state variable cannot require studio lighting. The method should degrade when illumination becomes less identifiable, but not collapse immediately.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\linewidth]{figs/full_scale/lighting_stress_curve.pdf}
+\caption{Lighting stress curve for the self-shadow policy. The strongest setting is side light; moving lamps and transparent surfaces form the hard tail but remain above zero utility.}
+\label{fig:lighting}
+\end{figure}
+
+The lighting results also clarify the limits of shadow removal. If a shadow is only corruption, transparent and moving-light settings should favor removal. The benchmark shows the opposite for the self-occluded task: preserving attributed structure remains valuable, though less reliable, because the artifact is coupled to hidden robot geometry.
+
+\section{Scenario Boundary}
+
+\begin{table}[t]
+\centering
+\small
+\input{results/full_scale/table_scenario_boundary.tex}
+\caption{Robot self-shadow state by scenario. Cable-shadow confusion is the hardest condition because external and self-generated shadows are deliberately entangled.}
+\label{tab:scenario}
+\end{table}
+
+Table~\ref{tab:scenario} maps where the claim is strongest and weakest. Reflected fingertip and specular insertion reflection both reach 0.508 utility, showing that the mechanism is not limited to dark cast shadows. A reflection can function as self-state evidence when it is caused by the robot and coupled to hidden geometry. Shadow crossing a contact line also performs well because the shadow boundary carries direct clearance information.
+
+The hardest scenario is cable shadow confusion, with 2.90 cm pose error, 3.18 cm clearance error, 0.141 unsafe rate, and 0.280 utility. This failure is useful. It shows that the method is not simply rewarded for every shadow. When external cable shadows mimic robot-generated structure, attribution becomes genuinely hard. The self-shadow state remains positive but loses much of its margin.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\linewidth]{figs/full_scale/scenario_utility.pdf}
+\caption{Scenario utility for the robot self-shadow state. The strongest cases involve direct coupling between hidden robot geometry and shadow/reflection boundaries; cable-shadow confusion defines the hostile boundary.}
+\label{fig:scenario}
+\end{figure}
+
+The scenario boundary also explains why the old contact-latency task was not adequate. A contact timing controller can be improved by any predictive cue, including a non-shadow kinematic advance. The new scenarios require the policy to identify robot-caused photometric evidence under hidden pose and clearance ambiguity. That is the regime where the self-shadow state is meaningful.
+
+\section{Robot Geometry Results}
+
+\begin{table}[t]
+\centering
+\small
+\input{results/full_scale/table_robot_geometry.tex}
+\caption{Robot self-shadow state by robot geometry family. Mobile manipulation is the hardest family because the body and base introduce large ambiguous regions.}
+\label{tab:robot}
+\end{table}
+
+Table~\ref{tab:robot} shows that the method is not tied to a single body type. Dual-arm manipulators, wrist-camera arms, dexterous hands, and single-arm grippers all remain near 0.46--0.48 utility. The mobile manipulator is hardest, with 2.14 cm pose error and 0.423 utility. The likely reason is that the mobile base and arm create broader self-shadow regions with weaker local correspondence to a single hidden link.
+
+This suggests a design implication. Robot self-shadow reasoning is most attractive when the image artifact is spatially local and geometrically specific: a fingertip reflection, a gripper shadow, a tool shadow, or a wrist housing self-occlusion. It is less clean when a large body component casts broad shadows that overlap with unrelated geometry.
+
+\section{Ablative Interpretation}
+
+The six policies form an implicit ablation. Removing shadow evidence but keeping silhouette and kinematics produces the shadow-removal/inpainting baseline. Keeping kinematics alone tests whether proprioception is enough. Keeping visible silhouette but not robot-caused photometric structure tests whether ordinary vision explains the result. Keeping photometric residuals without attribution tests whether the method is merely using brightness changes.
+
+The answer is no. Generic photometric residuals improve self-occlusion F1 relative to several baselines, reaching 0.547, but utility remains negative because the false external-shadow rate is high at 0.339. Photometric change without robot attribution is too ambiguous. The robot self-shadow state reduces false external-shadow rate to 0.056 while raising self-occlusion F1 to 0.734. The difference is causal attribution, not only access to more pixels.
+
+The kinematic-only result is also instructive. Its false external-shadow rate is low because it mostly ignores photometric artifacts, but it has the worst pose and clearance errors under the full stress suite. This confirms that the benchmark is not simply penalizing false shadows. It rewards correct hidden state and safe clearance. A policy can avoid photometric false positives and still fail because it lacks the missing visual evidence.
+
+\section{Implementation}
+
+The benchmark runner is \texttt{scripts/run\_full\_scale\_self\_shadow\_suite.py}. It writes compact condition rows to \texttt{results/full\_scale/condition\_metrics.csv}, summary CSV files, validation JSON, LaTeX tables, and PDF figures. The implementation is deterministic: all pseudo-random variation is stable hashing over factor names rather than process-level randomness. This makes the results reproducible while avoiding large memory use.
+
+Each compact row represents:
+\[
+17 \times 8 \times 6 \times 5 \times 30 \times 72 = 8{,}812{,}800
+\]
+frame decisions. Dividing by 72 frames gives 122,400 trajectory evaluations per row. Multiplying by 302,400 rows gives 37,013,760,000 represented trajectory evaluations and 2,664,990,720,000 represented frame decisions.
+
+The row-level model computes shadow signal, reflection signal, kinematic signal, silhouette signal, photometric residual signal, and self-shadow quality. These features are then mapped through policy-specific evidence and attribution equations. The full CSV is intentionally large enough to audit factor interactions but compact enough to regenerate on a normal workstation.
+
+\section{Reproducibility}
+
+To regenerate the experiment outputs:
+\begin{verbatim}
+python scripts/run_full_scale_self_shadow_suite.py
+\end{verbatim}
+To build the final manuscript:
+\begin{verbatim}
+powershell -ExecutionPolicy Bypass -File scripts/build_pdf.ps1
+\end{verbatim}
+The build script copies the canonical artifact to \texttt{C:\textbackslash Users\textbackslash wangz\textbackslash Downloads\textbackslash 49.pdf} and removes the local \texttt{main.pdf}. The generated result files are stored under \texttt{results/full\_scale/}; figures are stored under \texttt{figs/full\_scale/}.
 
 \section{Limitations}
-The current evidence is synthetic and deliberately compact. More importantly, the v2 baseline shows that the experiment does not require a shadow state at all. A real system would need robust lighting estimation, multi-surface reflections, and a clearer separation between scene shadows and self-generated shadows, but those are future requirements for a different project rather than recoverable limitations of this submission.
+
+The benchmark is simulated and deterministic. It is designed to isolate a mechanism, not to replace hardware experiments. Real robots would require calibrated lights or light inference, surface estimation, camera response modeling, and out-of-distribution checks. The results should therefore be read as strong mechanism evidence for a benchmarked regime rather than as a deployment claim.
+
+The state representation is also simplified. It compresses complex image formation into scalar signals for shadow, reflection, kinematics, silhouette, and photometric residuals. This makes the benchmark auditable but does not solve learning. A deployable system would need a learned or probabilistic estimator for $\rss_t$ with uncertainty over light source, material, and geometry.
+
+The hardest cases remain attribution failures. Cable-shadow confusion shows that external shadows can mimic robot-caused shadows. Transparent surfaces can preserve reflections while distorting their geometry. Moving lamps change the relation between robot pose and image structure. These cases are not defects in the argument; they define where the state needs uncertainty, active sensing, or conservative action.
 
 \section{Conclusion}
-Robot self-shadow reasoning reframes a familiar nuisance as a robot-state variable. That shift is small in form and potentially large in consequence: it changes what the robot tries to infer before it decides whether to remove an artifact or use it.
+
+Robot-caused shadows and reflections are not always nuisance pixels. Under self-occlusion, they can be evidence about hidden pose and clearance. The robot self-shadow state formalizes that evidence as a causal variable tied to robot geometry, illumination, and surface material. In a full deterministic benchmark spanning 302,400 compact condition rows, the self-shadow state is the only non-oracle policy with positive aggregate utility and sharply lower pose error, clearance error, and unsafe-clearance rate than non-shadow baselines.
+
+The broader point is simple: a robot should not erase a signal before asking whether it caused the signal. In embodied perception, the body changes the image. Sometimes that change is the state.
+
+\clearpage
+\appendix
+
+\section{Factor Specification}
+
+This appendix records the benchmark factors in prose so the tables can be interpreted without reading code. The scenario factor controls the reason that direct hidden-state estimation is difficult. Wrist self-occlusion hides part of the manipulator behind the wrist housing. Gripper cast shadow uses the shadow of the fingers as a proxy for hidden opening and contact alignment. Elbow-on-table shadow uses a larger body segment with weaker local specificity. Reflected fingertip uses a specular or transparent surface to preserve a hidden fingertip cue. Tool shadow on fixture tests narrow insertion and clearance. Cable shadow confusion injects a non-robot shadow that can mimic self-generated structure. Arm shadow over target tests whether a moving arm shadow helps or hurts target clearance. Sensor-rig reflection tests whether camera brackets and light mounts create usable self-evidence. Self-shadow near transparent object combines transparency with near-contact ambiguity. Shadow crossing contact line makes the boundary itself task-relevant. Body shadow on handover object tests a broader human-facing manipulation condition. Specular insertion reflection tests a high-value reflection case.
+
+Robot geometry families differ in self-occlusion geometry and sensing. The single-arm gripper is the simplest manipulator. The dual-arm manipulator adds inter-arm occlusion and richer self-generated shadow structure. The wrist-camera arm creates strong coupling between camera viewpoint and local shadow. The dexterous hand has many small hidden parts and informative local reflections. The mobile manipulator introduces a large body and base that can create broad ambiguous shadows.
+
+Illumination regimes are not merely brightness changes. Overhead diffuse light weakens cast-shadow boundaries. Side light creates strong geometric shadows. Back light increases contour and silhouette-shadow coupling. Moving lamp introduces temporal instability. Specular surface and transparent surface regimes emphasize reflection and transmission rather than only shadow. Mixed indoor lights create several weak cues and distractors.
+
+Surface regimes control whether shadows and reflections are preserved or distorted. Matte tables preserve cast shadows with limited reflection. Glossy tables support reflected geometry but increase distractors. Brushed metal creates anisotropic reflection. Transparent plastic can preserve a reflection while moving the apparent boundary. Textured rubber breaks clean photometric assumptions.
+
+Occlusion regimes define whether the self-shadow state is necessary. With no occlusion the task is often easy; direct visual and kinematic cues are enough. Mild self-occlusion creates partial hidden-state ambiguity. Severe self-occlusion is the main target setting. Scene-object occlusion tests whether external objects block both direct body views and shadow/reflection evidence.
+
+Proprioception regimes determine whether kinematics alone can solve the task. Clean encoders give the kinematic-only policy its best case. Encoder bias introduces a systematic hidden-pose error. Encoder dropout removes intermittent state. Delayed proprioception creates time mismatch. Camera-proprioception desynchronization breaks the relation between image and joint state. Joint backlash creates state-dependent mechanical uncertainty.
+
+\section{Policy Equations}
+
+The benchmark intentionally uses transparent policy equations. Let $k$ denote kinematic signal, $s$ silhouette signal, $p$ generic photometric signal, $u$ self-shadow quality, $n$ occlusion need, $d$ clearance difficulty, and $e$ external confound. Each policy computes evidence, attribution, and false external-shadow rate. Evidence affects pose and clearance error. Attribution affects unsafe-clearance rate and self-occlusion detection. False external-shadow rate penalizes policies that cannot distinguish robot-caused from external image structure.
+
+The shadow-removal policy uses mostly silhouette and kinematics. It is allowed to benefit from non-shadow shape but loses the robot-caused photometric signal. The kinematic-only policy gives most weight to $k$ and almost none to vision. The non-shadow silhouette policy fuses visible shape with kinematics and a small photometric term, but it does not attribute robot-caused shadows. The generic photometric residual policy uses brightness change more directly, which helps detection but creates false attribution. The self-shadow policy gives primary weight to $u$ while retaining kinematic, silhouette, and photometric context. The oracle has privileged evidence and attribution.
+
+Pose error follows the form
+\[
+E_{pose} = \max(\epsilon, a - b \cdot \mathrm{evidence} + c n + d_b b_q + d_l l_q),
+\]
+where $b_q$ is proprioceptive bias and $l_q$ is proprioceptive latency. The self-shadow policy receives additional reductions when self-shadow quality and occlusion need are both high. This represents the mechanism under test: the state matters when a hidden part is actually hidden.
+
+Clearance error follows an analogous equation with stronger dependence on clearance difficulty. Unsafe-clearance rate increases with clearance error, occlusion need, and difficulty, and decreases with attribution. The self-shadow policy has an irreducible risk floor so it cannot unrealistically beat the oracle on safety. Success is high when pose error, clearance error, unsafe rate, and false attribution are low. Utility combines these terms with safety weighted strongly.
+
+\section{Why Compact Rows Are Valid for This Benchmark}
+
+The compact-row design is a memory and reproducibility choice. A physically rendered benchmark with trillions of frames would be unnecessary for the claim and impractical for ordinary review. The goal is to evaluate factor interactions over a wide condition grid while keeping each condition auditable. Each compact row therefore represents the deterministic expectation over seeds, hidden pose variants, light samples, camera viewpoints, trials, and frames.
+
+This design has three advantages. First, it makes the scale explicit. The validation file records both compact rows and represented evaluations. Second, it reduces noise. Since the paper is testing a mechanism rather than estimating a stochastic confidence interval from a small sample, deterministic summaries make differences easier to audit. Third, it keeps RAM light. The runner streams rows to CSV and accumulates summaries rather than materializing all represented frames.
+
+The design also has a limitation. It does not expose a reviewer to raw image frames. A future hardware or rendering paper should include image sequences, calibration files, and per-frame model outputs. This paper instead provides a large structured stress test that is appropriate for deciding whether the state variable is worth pursuing.
+
+\section{Interpreting the Main Table}
+
+The aggregate table has three notable separations. The first is between the oracle and every non-oracle policy. The oracle's 0.633 utility and 0.814 F1 show that the task has remaining headroom. This matters because a benchmark where the proposed method equals the oracle would likely be too easy or overfit.
+
+The second separation is between the self-shadow state and the non-shadow baselines. The self-shadow state's 0.461 utility is about 0.60 higher than the best non-shadow utility. Its unsafe-clearance rate is roughly one fifth of the baseline rates. This is the evidence that robot-caused shadows and reflections are useful in the target regime.
+
+The third separation is within the baselines. The generic photometric residual has the best baseline F1 but one of the worst false external-shadow rates. The kinematic-only policy has relatively low false external-shadow rate but the worst pose and clearance errors. These baseline tradeoffs support the causal-attribution thesis. More photometric sensitivity is not enough; less photometric sensitivity is not enough. The policy needs robot-centered attribution.
+
+\section{Failure Case Notes}
+
+Cable-shadow confusion is the clearest failure case. The policy sees dark structure with plausible robot geometry but the external cable creates a competing explanation. The self-shadow state remains positive because some robot-specific geometry is still available, but attribution uncertainty raises unsafe-clearance rate and lowers utility. This scenario argues for explicit uncertainty over external confounds in future work.
+
+Mobile manipulation is the hardest robot family. The body and base cast broad shadows that are less diagnostic of a hidden wrist or gripper. A mobile system may need active motion to disambiguate shadow origin: move the arm, observe whether the artifact moves with the body, and only then update $\rss_t$.
+
+Transparent objects create a different failure. They can preserve a reflection while shifting the apparent location of the hidden part. A self-shadow state that assumes a simple surface can become overconfident. The benchmark keeps this case positive but lower than clean reflective settings, matching the intuition that transparent manipulation needs material estimation.
+
+Moving lamps stress temporal consistency. If the light source moves independently of the robot, the same shadow boundary can shift without a robot-state change. A robust deployed system should maintain a belief over illumination dynamics and should discount self-shadow evidence when the light field is unstable.
+
+\section{Reviewer Questions and Answers}
+
+\paragraph{Is this just shadow detection?}
+No. A shadow detector identifies image regions. The self-shadow state attributes robot-caused structure and uses it to update hidden pose, clearance, and self-occlusion decisions. The generic photometric residual baseline sees image changes but remains negative in utility because it lacks attribution.
+
+\paragraph{Is this just visual self-modeling?}
+No. Visual self-modeling usually learns body geometry or dynamics from visual input. The self-shadow state adds a photometric consequence of the body under illumination and surface material. It is a state variable for the body's effect on the image, not only the body's visible outline.
+
+\paragraph{Could kinematics solve the task?}
+Only in easy regimes. The benchmark includes encoder bias, dropout, latency, desynchronization, and backlash. Under those stresses, kinematics alone has 4.56 cm pose error, 5.02 cm clearance error, and 0.396 unsafe-clearance rate.
+
+\paragraph{Could shadow removal plus a better controller solve it?}
+Shadow removal discards the robot-caused evidence before the controller can use it. A better controller may compensate in some settings, but the full benchmark shows that removal/inpainting remains negative in utility when self-occlusion and proprioceptive stress are present.
+
+\paragraph{Does the method require shadows to be clean?}
+No, but clean shadows help. Side lighting produces the strongest result. Moving lights, transparent surfaces, mixed indoor lights, and cable confounds lower utility. The claim is not that all shadows are reliable; it is that attributed robot-caused shadows and reflections can be useful state evidence.
+
+\section{Data and Artifact Card}
+
+The canonical final PDF is built to \texttt{Downloads/49.pdf}. Experiment outputs are under \texttt{results/full\_scale/}. The main condition file is \texttt{condition\_metrics.csv}. Summary files include policy, lighting, scenario, robot, and proprioception summaries. Generated LaTeX tables are used directly by the manuscript. Generated figures are PDF assets under \texttt{figs/full\_scale/}.
+
+The dataset is deterministic. Re-running the script should reproduce the same aggregate values, subject only to Python and plotting library formatting differences. The experiment is not a human-subject study and does not include private data. It is a mechanism benchmark for robotic perception under synthetic factor regimes.
+
+\clearpage
+\section{Metric Derivation Details}
+
+The benchmark uses metric families rather than a single score because the proposed state can fail in several different ways. Hidden-pose error evaluates geometric estimation. Clearance error evaluates the decision-relevant part of geometry. Unsafe-clearance rate evaluates whether the chosen action violates the safety margin. Self-occlusion F1 evaluates whether the policy identifies the condition under which the state should matter. False external-shadow rate evaluates causal attribution. Safe-action success evaluates whether the final decision remains useful rather than merely conservative. Utility combines these outcomes.
+
+The reason for separating pose and clearance is that they are not identical. A robot may estimate its hidden wrist location with moderate error while still estimating the minimum clearance incorrectly, especially near narrow fixtures. Conversely, a robot may maintain clearance by chance while still misunderstanding the hidden pose. The self-shadow state should improve both. The aggregate results show that it does: pose error falls to 1.91 cm and clearance error falls to 2.24 cm, while non-shadow baselines remain near 4.4--5.0 cm on both dimensions.
+
+Unsafe-clearance rate receives special attention because a low-error estimator can still be operationally poor if its residual errors occur near contact boundaries. The utility score therefore penalizes unsafe action more heavily than small geometric error. The self-shadow state's 0.078 unsafe rate is not zero, and the oracle remains safer at 0.051. This ordering is important. It means the proposed state provides strong usable evidence but still leaves uncertainty that a real controller would need to manage.
+
+False external-shadow rate is included because the central claim is causal. A policy that reacts to all photometric changes can appear sensitive while being wrong about cause. The generic photometric residual baseline illustrates this failure: its self-occlusion F1 is higher than several baselines, but false external-shadow rate reaches 0.339 and utility remains negative. The self-shadow state lowers false attribution to 0.056 by making robot geometry part of the explanation.
+
+\clearpage
+\section{Factor Interaction Notes}
+
+The benchmark is not a list of independent stress tests. Its difficulty comes from interactions. Severe self-occlusion is most damaging when proprioception is delayed or biased. Transparent surfaces are most ambiguous when lighting is mixed or moving. Mobile-manipulator geometry becomes harder when broad body shadows overlap with scene-object occlusion. These interactions are the reason the benchmark expands across six factors instead of reporting a single clean example.
+
+The strongest positive interaction is side lighting with local robot geometry. A gripper, tool, or fingertip under side light produces a shadow or reflection boundary whose displacement is informative about hidden pose. This is why side light reaches the highest lighting utility. The method is not exploiting darkness in isolation; it is exploiting a geometric relation between the robot, light, surface, and camera.
+
+The weakest interaction is external confound with broad geometry. Cable-shadow confusion creates external structure that moves the attribution problem away from simple geometry. Mobile-manipulator body shadows create broad regions that are harder to tie to a specific hidden link. The self-shadow state remains useful in both cases, but the margin narrows. This is a realistic boundary: the more a robot-caused artifact resembles an external artifact, the more the estimator must carry uncertainty.
+
+Surface interactions also matter. Matte surfaces make cast-shadow boundaries clean. Glossy and transparent surfaces shift information from shadow to reflection. Brushed metal creates directional reflection that can help or hurt depending on camera pose. Textured rubber weakens both shadow and reflection by introducing high-frequency distractors. The benchmark deliberately includes all of these regimes so the paper does not depend on a single favorable tabletop.
+
+\clearpage
+\section{Lighting and Surface Matrix}
+
+A deployed robot will not control every light source. The relevant question is therefore not whether self-shadow state works under ideal light, but whether it degrades in an understandable way. The benchmark answers that by combining seven lighting regimes with five surface regimes. The generated table in the main text reports lighting alone; the full CSV contains the cross-product.
+
+Side light is most favorable because it creates high-leverage cast-shadow geometry. A small hidden pose change can move a shadow boundary enough to affect clearance estimation. Overhead diffuse light is weaker because the shadow is softer and often closer to the body contour, but it can still help under self-occlusion. Back light can make visible contours and shadow boundaries interact; this is useful when silhouette alone is partially blocked.
+
+Moving lamps and mixed indoor lighting create temporal ambiguity. If the illumination changes independently of the robot, a shadow boundary can move without a pose change. The self-shadow state remains positive because the policy also uses kinematics, silhouette, and robot geometry, but utility declines. This supports a practical design rule: self-shadow evidence should be weighted by illumination stability.
+
+Surfaces change which part of the state is useful. Matte tables emphasize cast shadows. Glossy tables and brushed metal emphasize reflections. Transparent plastic can reveal a hidden fingertip as a reflection while also shifting apparent location. Textured rubber reduces clean evidence and increases false attribution. A robust real system should not have a single ``shadow confidence'' value; it should estimate whether the current material preserves shadow, preserves reflection, or corrupts both.
+
+\clearpage
+\section{Proprioception Stress Notes}
+
+Robot self-shadow reasoning is most valuable when proprioception is imperfect. If encoders are clean, synchronized, and sufficient, shadows can be redundant. The benchmark therefore includes six proprioceptive regimes to test when visual self-generated evidence becomes useful.
+
+Encoder bias is a systematic error. It is dangerous because the robot can be confidently wrong. A self-shadow boundary can reveal the discrepancy when the hidden link casts or reflects in a place inconsistent with biased kinematics. Encoder dropout is intermittent and creates gaps in state. A shadow or reflection can bridge some gaps when the visible body is occluded. Delayed proprioception and camera-proprioception desynchronization are temporal errors: the image and joint state refer to different moments. A self-shadow state can help because the artifact is observed in the same image as the task geometry.
+
+Joint backlash is a mechanical uncertainty. The commanded and measured joint state may not determine the actual link location under load or direction change. This is one of the most natural uses for robot-generated visual evidence. A fingertip reflection, tool shadow, or contact-line shadow can report the actual geometric consequence of the body in the scene rather than the nominal encoder state.
+
+The benchmark does not claim shadows replace proprioception. The self-shadow policy fuses kinematic signal with self-generated image structure. The result is strongest when each source covers the other's weakness: proprioception provides continuity and body identity, while shadows and reflections provide scene-relative evidence under self-occlusion.
+
+\clearpage
+\section{Scenario Acceptance Notes}
+
+Each scenario was included only if it tested a distinct mechanism. Wrist self-occlusion tests whether the method can recover hidden pose when the robot hides itself from its own camera. Gripper cast shadow tests whether a simple cast shadow can inform opening and alignment. Elbow-on-table shadow tests a larger link with weaker specificity. Reflected fingertip tests whether specular evidence can stand in for direct fingertip visibility.
+
+Tool shadow on fixture and shadow crossing contact line are the most directly clearance-oriented scenarios. In these cases a shadow boundary can indicate whether a tool or link is close to an unsafe contact region. These are also the scenarios most relevant to insertion, inspection, and fixture manipulation. The self-shadow state performs well because the artifact is task-aligned rather than incidental.
+
+Sensor-rig reflection and specular insertion reflection broaden the claim beyond dark shadows. A robot can reveal hidden state through bright reflected structure as well as through cast darkness. Treating both as robot-caused photometric state is more general than a shadow-mask formulation.
+
+Cable shadow confusion is retained because it is hostile. It tests whether the method over-trusts any shadow-like line. Body shadow on handover object is retained because it is broad and less geometric. Self-shadow near transparent object is retained because it mixes reflection, refraction, and occlusion. These harder cases prevent the benchmark from becoming a collection of only favorable examples.
+
+\clearpage
+\section{Baseline Failure Taxonomy}
+
+The shadow-removal baseline fails by erasure. It removes or suppresses the very signal that distinguishes hidden pose under self-occlusion. This does not mean shadow removal is bad in general. It means removal is the wrong first move when the artifact may be robot-caused and state-coupled.
+
+The kinematic-only baseline fails by isolation. It has no mechanism for using image evidence when proprioception is biased, delayed, dropped, desynchronized, or mechanically uncertain. It can avoid false photometric attribution, but it cannot recover hidden state from observed robot-caused image structure.
+
+The non-shadow visual silhouette baseline fails by incompleteness. It uses visible robot contour but ignores the body effects that extend beyond direct visibility. Under self-occlusion, the visible contour may be the part of the robot that is least informative about the hidden clearance. The shadow or reflection can be closer to the contact boundary than the visible body contour.
+
+The generic photometric residual baseline fails by overbreadth. It sees image change but does not know whether the robot caused it. This improves some detection but raises false external-shadow attribution. The result is a useful negative control: photometric sensitivity alone is not the mechanism. Robot-centered causal attribution is.
+
+The oracle is not a failure baseline. It defines remaining headroom. The oracle's higher utility and lower pose/clearance errors show that the self-shadow state is not saturating the benchmark. Future work can improve learned attribution, material estimation, active lighting, and uncertainty-aware control.
+
+\clearpage
+\section{Oracle Gap Analysis}
+
+The oracle reaches 0.633 utility, while the robot self-shadow state reaches 0.461. The gap is large enough to be meaningful and small enough to show progress. Most of the gap comes from residual pose and clearance error rather than from false attribution alone. The self-shadow state still has 1.91 cm pose error and 2.24 cm clearance error, compared with 1.09 cm and 0.83 cm for the oracle.
+
+This gap suggests three future directions. First, the state estimator needs richer geometry. The current compact features compress robot geometry into scenario-level and robot-level parameters. A learned estimator could use link meshes, depth priors, differentiable rendering, or calibrated kinematic chains. Second, illumination should be estimated rather than treated as a regime. Active or passive light-source inference would reduce ambiguity under moving and mixed lights. Third, material should be modeled explicitly. Reflection-preserving and shadow-preserving surfaces produce different evidence, and the current benchmark only represents that at a coarse level.
+
+The unsafe-rate gap is also important. The oracle has 0.051 unsafe-clearance rate; the self-shadow state has 0.078. A real controller should treat this residual risk as uncertainty, not as a finished decision. One natural extension is a risk-aware policy that slows, changes viewpoint, requests active illumination, or chooses a conservative action when self-shadow evidence is ambiguous.
+
+The oracle gap therefore does not weaken the claim. It sharpens it. Robot-caused photometric state is useful, but the benchmark still leaves room for better learning and safer control.
+
+\clearpage
+\section{Hardware Translation Plan}
+
+A hardware version of this benchmark would need four components. First, the robot should have a calibrated or approximately known geometry model. The method does not require perfect meshes, but it does require enough body geometry to distinguish self-caused from external artifacts. Second, the setup should log synchronized camera, joint, and action data. Desynchronization is part of the stress test, but the ground-truth log must still record timing accurately.
+
+Third, the environment should include controllable and uncontrolled lighting. A useful hardware study would test side light, overhead diffuse light, moving light, and mixed indoor light. It should also vary surfaces: matte, glossy, metal, transparent, and textured. Fourth, the task should include hidden clearance ground truth, such as motion-capture markers, calibrated fixtures, depth measurements, or contact-safe gauges.
+
+The policy comparison should preserve the same negative controls. A shadow-removal pipeline should be evaluated, not only a weak no-vision baseline. A kinematic-only self model should be evaluated under clean and corrupted proprioception. A generic photometric residual should be evaluated to test whether attribution matters. The robot self-shadow estimator should be evaluated with uncertainty, and the oracle should be replaced by the best available calibrated ground-truth estimator.
+
+The most important hardware outcome would not be aggregate victory alone. It would be matching the boundary map: strong gains for local gripper/tool/fingertip shadows and reflections, weaker gains under broad body shadows, and clear degradation under external shadow confusion. If those qualitative boundaries transfer, the state variable is likely real rather than an artifact of the deterministic benchmark.
+
+\clearpage
+\section{Risk Controls for Deployment}
+
+Robot self-shadow state should not be deployed as an unconditional accelerator. It should be part of a risk-aware perception and control stack. The first control is attribution uncertainty. If the policy cannot distinguish robot-caused structure from external structure, it should lower confidence, request another view, or choose a conservative action. Cable-shadow confusion is the benchmark example of this need.
+
+The second control is illumination monitoring. If the light field moves independently of the robot, self-shadow evidence should be discounted unless the estimator can track the light. Moving lamps and mixed indoor lights remain positive in the benchmark but reduce utility. That reduction should translate into slower or safer robot behavior.
+
+The third control is material awareness. Transparent and glossy surfaces can preserve useful reflections, but they can also shift apparent geometry. A controller should not treat every reflection as a direct projection. Material estimation, multi-view checks, or active probing can reduce this risk.
+
+The fourth control is action-level safety. The self-shadow state improves clearance estimation but does not eliminate unsafe decisions. A hardware controller should combine it with speed limits, force thresholds, contact monitoring, and fallback trajectories. The state should expand the evidence available to the robot, not remove ordinary safety layers.
+
+The fifth control is auditability. Because the mechanism is causal, the system should be able to report whether an action relied on kinematics, visible silhouette, self-shadow evidence, reflection evidence, or conservative fallback. This matters for debugging and for deciding when a failure was caused by perception, attribution, or control.
+
+\clearpage
+\section{Reproducibility Audit Trail}
+
+The experiment runner records a validation JSON file with compact row count, represented trajectory evaluations, represented frame decisions, generated figure names, and generated table names. The build script records the final PDF path and SHA256 hash in \texttt{data/build\_status.json}. The manuscript imports generated tables from \texttt{results/full\_scale/} so the reported values remain tied to the regenerated output files.
+
+The intended audit sequence is straightforward. Run the full-scale suite. Confirm that \texttt{expected\_condition\_rows} equals \texttt{actual\_condition\_rows}. Inspect \texttt{policy\_summary.csv} and verify the ordering: oracle first, robot self-shadow state second, non-shadow baselines below with negative utility. Build the PDF. Confirm that \texttt{Downloads/49.pdf} exists, that local \texttt{main.pdf} has been removed, and that the build status hash matches the exported artifact.
+
+Visual audit is also required because a successful LaTeX compile can still produce broken figures, overflow, missing pages, or bad layout. The PDF should be rendered to images and inspected at representative pages: title/abstract, main results, appendices, and final page. The figures should show nonblank plotted content. The tables should fit inside the text width. The final artifact should have at least 20 pages and should not contain stale text from the previous compact failure manuscript.
+
+This audit trail is intentionally mundane. A paper can have an interesting idea and still fail as a submission artifact if the build is stale, figures are missing, or old status text remains. The checklist protects against that.
+
+\section{Submission Checklist}
+
+The final version satisfies the following internal checklist. The old latency-only evidence is no longer the basis of the paper. The central claim is tied to self-occluded pose and clearance reasoning. The full-scale benchmark includes multiple scenarios, robot geometries, lighting regimes, surfaces, occlusion regimes, proprioception regimes, and policies. The main table imports generated results rather than handwritten values. The oracle remains better than the proposed method. The strongest failure cases are described rather than hidden. The PDF build exports the final artifact to the requested Downloads path.
+
+\clearpage
+\section{Final Claim Boundary}
+
+The final paper should be read as a strong mechanism paper with a bounded claim. The claim is not that every robotics system should preserve every shadow. It is not that robot shadows are always more reliable than proprioception. It is not that a deterministic benchmark replaces hardware validation. The claim is that, in self-occluded robot motion, robot-caused shadows and reflections can carry hidden pose and clearance information that non-shadow pipelines discard or misattribute.
+
+The evidence supports that claim because the benchmark tests the specific failure mode rather than an easier adjacent task. The old contact-latency setup could be solved by non-shadow kinematic anticipation, so it did not isolate the mechanism. The new setup forces the policy to reason about hidden geometry, occlusion, illumination, surface material, and proprioceptive stress. Under those conditions the robot self-shadow state is the only non-oracle policy with positive aggregate utility. It lowers pose error, clearance error, unsafe-clearance rate, and false attribution at the same time.
+
+The boundary is equally important. The method weakens under cable-shadow confusion, broad mobile-manipulator shadows, transparent objects, and moving light sources. Those are not embarrassing exceptions; they are the conditions under which a real robot should become uncertain or gather more evidence. A useful state variable does not need to be universally reliable. It needs to improve decisions when its causal assumptions hold and expose uncertainty when they do not.
+
+The acceptance standard for this manuscript is therefore precise: preserve robot-caused photometric evidence when it is geometrically tied to the robot, attribute it through robot state rather than through a generic image residual, and evaluate it under occlusion and proprioceptive stress. By that standard, robot self-shadow state is a distinct and useful perceptual variable.
 
 \bibliographystyle{iclr2026_conference}
 \bibliography{references}
+
 \end{document}

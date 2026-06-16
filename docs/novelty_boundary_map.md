@@ -1,15 +1,27 @@
 # Novelty Boundary Map
 
-## Claimed boundary
+Inside the claim:
 
-- Shadow removal treats artifacts as image corruption.
-- Cast-shadow reasoning uses shadows as external scene evidence.
-- Visual self-modeling estimates robot body state but does not explicitly use self-caused shadows or reflections as latent state.
+- Robot-caused cast shadows from grippers, tools, wrists, arms, sensor rigs, and body components.
+- Robot-caused reflections from fingertips, tools, and sensor hardware on glossy or transparent surfaces.
+- Hidden pose and clearance reasoning under self-occlusion.
+- Cases where proprioception is biased, delayed, dropped, desynchronized, or mechanically uncertain.
+- Causal attribution of photometric evidence through robot geometry.
 
-## V2 boundary failure
+Outside the claim:
 
-The runnable experiment does not cross that boundary. The shadow-state controller uses a correction that can be computed from current penetration and velocity without any shadow measurement. A non-shadow kinematic advance baseline therefore matches the result exactly.
+- Generic image shadow removal.
+- External cast-shadow scene localization where the shadow is not caused by the robot.
+- Pure visual self-modeling that ignores illumination artifacts.
+- Hardware deployment claims without a physical robot study.
 
-## Future requirement
+Hard boundary cases:
 
-A recoverable version would need a visual artifact variable whose removal degrades performance and whose non-shadow proxy cannot reproduce the same downstream behavior.
+- Cable-shadow confusion.
+- Moving independent light sources.
+- Broad mobile-base shadows with weak local geometry.
+- Transparent surfaces that shift apparent reflection geometry.
+
+Novel contribution:
+
+- Treat robot-caused shadows and reflections as first-class self-state evidence before deciding whether to remove, ignore, or use the artifact.

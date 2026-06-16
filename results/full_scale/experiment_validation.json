@@ -1,0 +1,22 @@
+{
+  "status": "complete",
+  "expected_condition_rows": 302400,
+  "actual_condition_rows": 302400,
+  "represented_trajectory_evaluations": 37013760000,
+  "represented_frame_decisions": 2664990720000,
+  "evals_per_condition_row": 122400,
+  "frames_per_condition_row": 8812800,
+  "figures": [
+    "policy_success_utility.pdf",
+    "clearance_error_tradeoff.pdf",
+    "lighting_stress_curve.pdf",
+    "scenario_utility.pdf"
+  ],
+  "tables": [
+    "table_scale.tex",
+    "table_main_performance.tex",
+    "table_lighting_stress.tex",
+    "table_scenario_boundary.tex",
+    "table_robot_geometry.tex"
+  ]
+}

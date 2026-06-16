@@ -1,0 +1,19 @@
+{
+  "paper": 49,
+  "status": "final_v3_full_scale",
+  "canonical_pdf": "C:/Users/wangz/Downloads/49.pdf",
+  "pages": 25,
+  "file_size_bytes": 296311,
+  "sha256": "72BF9B8880BB56F73A00538B19883AE37A7C5CEB676C7AAD26A9EE9DB91D2AEF",
+  "experiment": {
+    "compact_condition_rows": 302400,
+    "represented_trajectory_evaluations": 37013760000,
+    "represented_frame_decisions": 2664990720000
+  },
+  "visual_qa": {
+    "renderer": "pdftoppm -png -r 144",
+    "inspected_pages": [1, 7, 9, 18, 25],
+    "result": "pass",
+    "notes": "Title, main result figures, dense scenario table, appendix page, and final bibliography page were readable and nonblank."
+  }
+}

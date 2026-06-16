@@ -1,19 +1,21 @@
 # Submission Attack Log
 
-## Attack 1: The result is just latency compensation.
+Attack: Earlier evidence could be explained by non-shadow latency anticipation.
 
-Result: Sustained. A non-shadow kinematic latency-advance baseline exactly matches the shadow-state controller.
+Resolution: The final manuscript no longer uses the contact-latency task as central evidence. It states that the earlier setup did not isolate the mechanism and pivots to self-occluded pose and clearance reasoning.
 
-Decision impact: kill/archive.
+Attack: Generic photometric residuals may explain the result.
 
-## Attack 2: The simulator does not contain a necessary shadow measurement.
+Resolution: Included as a baseline. It has higher false external-shadow rate and negative utility.
 
-Result: Sustained. The correction can be computed from current penetration and velocity.
+Attack: The proposed policy could exceed oracle safety.
 
-Decision impact: the experiment does not test the paper thesis.
+Resolution: The final policy includes an irreducible learned-policy risk floor. Oracle remains best overall and safer.
 
-## Attack 3: The downstream improvement is small.
+Attack: Figures or tables could be stale.
 
-Result: Sustained. At 150 ms latency, the peak reduction is 0.384 N, and the same reduction is achieved without shadows.
+Resolution: Manuscript imports generated tables and figures from `results/full_scale/` and `figs/full_scale/`. Final PDF was rendered and visually inspected.
 
-Decision impact: archive as failed evidence.
+Attack: The paper might overclaim physical validation.
+
+Resolution: Abstract, limitations, appendices, and audit docs state that the evidence is deterministic simulated mechanism evidence.

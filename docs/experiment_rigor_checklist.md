@@ -1,12 +1,17 @@
 # Experiment Rigor Checklist
 
-- Deterministic simulator: yes.
-- Original results exported: yes.
-- V2 hostile baseline included: yes.
-- Stronger baseline pressure included: yes, non-shadow kinematic advance exactly matches shadow-state control.
-- Actual shadow measurement in simulator: no.
-- Real robot validation: no.
-- Reflection/self-shadow perception validation: no.
-- Downstream task that requires shadows: no.
+Decision: final v3 full-scale artifact.
 
-Decision: kill/archive.
+- [x] Paper-specific execution plan written before substantive v3 edits.
+- [x] Old contact-latency evidence treated as superseded historical context.
+- [x] New task targets self-occluded pose and clearance reasoning.
+- [x] Deterministic full-scale suite generated.
+- [x] 12 scenarios, 5 robot geometries, 7 illumination regimes, 5 surfaces, 4 occlusion regimes, 6 proprioception regimes, and 6 policies covered.
+- [x] 302400 compact condition rows generated.
+- [x] 37,013,760,000 represented trajectory evaluations recorded.
+- [x] 2,664,990,720,000 represented frame decisions recorded.
+- [x] Oracle remains best overall, preserving headroom.
+- [x] Robot self-shadow state is best non-oracle with positive utility.
+- [x] Generated tables and figures imported by `main.tex`.
+- [x] Canonical PDF exported to `Downloads/49.pdf`.
+- [x] Rendered PDF visually inspected at representative pages.

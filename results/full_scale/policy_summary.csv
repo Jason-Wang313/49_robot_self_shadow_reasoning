@@ -1,0 +1,7 @@
+policy,hidden_pose_error_cm,clearance_error_cm,unsafe_clearance_rate,false_external_shadow_rate,safe_action_success,self_occlusion_f1,utility,oracle_regret
+shadow_removal_inpainting,4.418978,4.896047,0.385882,0.175578,0.448266,0.511442,-0.147563,0.780510
+kinematic_only_self_model,4.560478,5.018499,0.395843,0.103043,0.439070,0.505877,-0.163230,0.796176
+nonshadow_visual_silhouette,4.421065,4.897853,0.379517,0.164057,0.451076,0.514610,-0.140923,0.773870
+generic_photometric_residual,4.438375,4.912832,0.361274,0.338621,0.443728,0.547159,-0.154573,0.787519
+robot_self_shadow_state,1.905631,2.243563,0.078095,0.056296,0.776133,0.734119,0.460915,0.172031
+oracle_self_state_estimator,1.094078,0.825432,0.050876,0.036387,0.881436,0.814157,0.632946,0.000000

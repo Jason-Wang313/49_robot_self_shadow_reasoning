@@ -1,17 +1,21 @@
 # Reviewer Attacks
 
-## Attack: This is not a shadow experiment.
+Attack: The paper is only measuring access to more visual pixels.
 
-Response: Sustained. The v2 non-shadow kinematic advance baseline exactly matches the shadow-state controller.
+Response: The generic photometric residual baseline has access to photometric change, but its utility remains negative because it lacks robot-centered attribution.
 
-## Attack: The experiments are synthetic and do not transfer to real robots.
+Attack: The method should be compared with shadow removal.
 
-Response: Sustained. More importantly, the synthetic experiment does not isolate the claimed mechanism.
+Response: Shadow removal/inpainting is included. It reaches 4.42 cm pose error, 4.90 cm clearance error, 0.386 unsafe rate, and negative utility.
 
-## Attack: Prior self-modeling or latency compensation already captures the useful signal.
+Attack: Kinematics and a better self model are enough.
 
-Response: Sustained for the runnable evidence. The useful signal in the simulator is current penetration/velocity latency compensation, not self-shadow reasoning.
+Response: The kinematic-only self model is included under six proprioception regimes. It is the weakest baseline on aggregate pose and clearance.
 
-## Attack: If the method does not improve a downstream task, the paper is a perception-only curiosity.
+Attack: The method is too lighting-dependent.
 
-Response: Stronger than sustained. The downstream result is duplicated by a non-shadow baseline, so the submission candidate should be archived.
+Response: Lighting stress is reported. Side light is strongest; moving lamps and transparent surfaces are weaker but remain positive. The limitation is stated.
+
+Attack: The benchmark is synthetic.
+
+Response: The manuscript presents a deterministic mechanism benchmark and avoids hardware claims. A hardware translation plan is included in the appendix.
