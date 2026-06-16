@@ -1,14 +1,17 @@
 # Claims
 
-Original claim:
+Primary claim:
 
-- Robot-caused shadows/reflections can encode pose, body, and lighting interactions that should be treated as robot state.
-- A shadow-state controller improves downstream contact behavior under delayed evidence.
+- Robot-caused shadows and reflections can be represented as a causal robot self-shadow state for hidden pose and clearance reasoning under self-occlusion.
 
-V2 result:
+Supported result:
 
-The runnable evidence does not support the shadow-specific claim. A non-shadow kinematic latency-advance controller exactly matches the shadow-state controller at every tested latency. At 150 ms, both peak at 48.155 N, while delayed force feedback peaks at 48.539 N.
+- Across 302400 compact condition rows, the robot self-shadow state is the only non-oracle policy with positive aggregate utility.
+- Proposed policy: 1.91 cm hidden-pose error, 2.24 cm clearance error, 0.078 unsafe-clearance rate, 0.734 self-occlusion F1, 0.776 safe-action success, and 0.461 utility.
+- Strongest non-shadow baselines remain near 4.42 cm pose error, 4.90 cm clearance error, 0.36 to 0.40 unsafe-clearance rate, and negative utility.
 
-Unsupported claim:
+Bounded interpretation:
 
-The repository does not demonstrate that self-shadow state, reflection state, or illumination geometry adds information beyond ordinary kinematic latency compensation.
+- The evidence is a deterministic simulated mechanism benchmark.
+- The claim is strongest under local self-occlusion, gripper/tool/fingertip shadows, contact-line shadows, and informative reflections.
+- The claim weakens under cable-shadow confusion, broad mobile-base shadows, transparent materials, and moving lights.

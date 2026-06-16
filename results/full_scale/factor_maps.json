@@ -1,0 +1,343 @@
+{
+  "scenarios": [
+    {
+      "name": "wrist_self_occlusion",
+      "label": "Wrist self-occlusion",
+      "shadow": 0.78,
+      "reflection": 0.2,
+      "clearance": 0.7,
+      "kinematic_gap": 0.46,
+      "external": 0.06
+    },
+    {
+      "name": "gripper_cast_shadow",
+      "label": "Gripper cast shadow",
+      "shadow": 0.86,
+      "reflection": 0.1,
+      "clearance": 0.66,
+      "kinematic_gap": 0.34,
+      "external": 0.08
+    },
+    {
+      "name": "elbow_table_shadow",
+      "label": "Elbow-on-table shadow",
+      "shadow": 0.7,
+      "reflection": 0.14,
+      "clearance": 0.55,
+      "kinematic_gap": 0.42,
+      "external": 0.1
+    },
+    {
+      "name": "reflected_fingertip",
+      "label": "Reflected fingertip",
+      "shadow": 0.28,
+      "reflection": 0.84,
+      "clearance": 0.74,
+      "kinematic_gap": 0.4,
+      "external": 0.12
+    },
+    {
+      "name": "tool_shadow_fixture",
+      "label": "Tool shadow on fixture",
+      "shadow": 0.76,
+      "reflection": 0.24,
+      "clearance": 0.8,
+      "kinematic_gap": 0.38,
+      "external": 0.15
+    },
+    {
+      "name": "cable_shadow_confusion",
+      "label": "Cable shadow confusion",
+      "shadow": 0.48,
+      "reflection": 0.18,
+      "clearance": 0.62,
+      "kinematic_gap": 0.32,
+      "external": 0.52
+    },
+    {
+      "name": "arm_shadow_target",
+      "label": "Arm shadow over target",
+      "shadow": 0.82,
+      "reflection": 0.16,
+      "clearance": 0.6,
+      "kinematic_gap": 0.44,
+      "external": 0.1
+    },
+    {
+      "name": "sensor_rig_reflection",
+      "label": "Sensor-rig reflection",
+      "shadow": 0.24,
+      "reflection": 0.78,
+      "clearance": 0.58,
+      "kinematic_gap": 0.36,
+      "external": 0.18
+    },
+    {
+      "name": "transparent_object_shadow",
+      "label": "Self-shadow near transparent object",
+      "shadow": 0.62,
+      "reflection": 0.54,
+      "clearance": 0.82,
+      "kinematic_gap": 0.5,
+      "external": 0.3
+    },
+    {
+      "name": "shadow_contact_line",
+      "label": "Shadow crossing contact line",
+      "shadow": 0.88,
+      "reflection": 0.22,
+      "clearance": 0.88,
+      "kinematic_gap": 0.54,
+      "external": 0.08
+    },
+    {
+      "name": "body_shadow_handover",
+      "label": "Body shadow on handover object",
+      "shadow": 0.74,
+      "reflection": 0.12,
+      "clearance": 0.72,
+      "kinematic_gap": 0.48,
+      "external": 0.14
+    },
+    {
+      "name": "specular_insertion_reflection",
+      "label": "Specular insertion reflection",
+      "shadow": 0.34,
+      "reflection": 0.9,
+      "clearance": 0.9,
+      "kinematic_gap": 0.52,
+      "external": 0.22
+    }
+  ],
+  "robots": [
+    {
+      "name": "single_arm_gripper",
+      "label": "Single-arm gripper",
+      "geometry": 0.78,
+      "encoder": 0.78,
+      "silhouette": 0.72
+    },
+    {
+      "name": "dual_arm_manipulator",
+      "label": "Dual-arm manipulator",
+      "geometry": 0.86,
+      "encoder": 0.74,
+      "silhouette": 0.66
+    },
+    {
+      "name": "wrist_camera_arm",
+      "label": "Wrist-camera arm",
+      "geometry": 0.8,
+      "encoder": 0.76,
+      "silhouette": 0.82
+    },
+    {
+      "name": "dexterous_hand",
+      "label": "Dexterous hand",
+      "geometry": 0.9,
+      "encoder": 0.66,
+      "silhouette": 0.58
+    },
+    {
+      "name": "mobile_manipulator",
+      "label": "Mobile manipulator",
+      "geometry": 0.7,
+      "encoder": 0.7,
+      "silhouette": 0.62
+    }
+  ],
+  "lighting": [
+    {
+      "name": "overhead_diffuse",
+      "label": "Overhead diffuse",
+      "shadow_quality": 0.66,
+      "reflection_quality": 0.3,
+      "distractor": 0.08
+    },
+    {
+      "name": "side_light",
+      "label": "Side light",
+      "shadow_quality": 0.88,
+      "reflection_quality": 0.38,
+      "distractor": 0.12
+    },
+    {
+      "name": "back_light",
+      "label": "Back light",
+      "shadow_quality": 0.74,
+      "reflection_quality": 0.42,
+      "distractor": 0.22
+    },
+    {
+      "name": "moving_lamp",
+      "label": "Moving lamp",
+      "shadow_quality": 0.58,
+      "reflection_quality": 0.36,
+      "distractor": 0.36
+    },
+    {
+      "name": "specular_surface",
+      "label": "Specular surface",
+      "shadow_quality": 0.42,
+      "reflection_quality": 0.86,
+      "distractor": 0.28
+    },
+    {
+      "name": "transparent_surface",
+      "label": "Transparent surface",
+      "shadow_quality": 0.36,
+      "reflection_quality": 0.74,
+      "distractor": 0.4
+    },
+    {
+      "name": "mixed_indoor_lights",
+      "label": "Mixed indoor lights",
+      "shadow_quality": 0.52,
+      "reflection_quality": 0.48,
+      "distractor": 0.3
+    }
+  ],
+  "surfaces": [
+    {
+      "name": "matte_table",
+      "label": "Matte table",
+      "shadow_preserve": 0.88,
+      "reflection_preserve": 0.18,
+      "texture": 0.12
+    },
+    {
+      "name": "glossy_table",
+      "label": "Glossy table",
+      "shadow_preserve": 0.62,
+      "reflection_preserve": 0.7,
+      "texture": 0.2
+    },
+    {
+      "name": "brushed_metal",
+      "label": "Brushed metal",
+      "shadow_preserve": 0.52,
+      "reflection_preserve": 0.76,
+      "texture": 0.34
+    },
+    {
+      "name": "transparent_plastic",
+      "label": "Transparent plastic",
+      "shadow_preserve": 0.42,
+      "reflection_preserve": 0.82,
+      "texture": 0.4
+    },
+    {
+      "name": "textured_rubber",
+      "label": "Textured rubber",
+      "shadow_preserve": 0.72,
+      "reflection_preserve": 0.22,
+      "texture": 0.42
+    }
+  ],
+  "occlusion": [
+    {
+      "name": "none",
+      "label": "No occlusion",
+      "visual_loss": 0.0,
+      "shadow_loss": 0.04,
+      "need": 0.18
+    },
+    {
+      "name": "mild_self_occlusion",
+      "label": "Mild self-occlusion",
+      "visual_loss": 0.22,
+      "shadow_loss": 0.02,
+      "need": 0.48
+    },
+    {
+      "name": "severe_self_occlusion",
+      "label": "Severe self-occlusion",
+      "visual_loss": 0.48,
+      "shadow_loss": 0.1,
+      "need": 0.78
+    },
+    {
+      "name": "scene_object_occlusion",
+      "label": "Scene-object occlusion",
+      "visual_loss": 0.38,
+      "shadow_loss": 0.24,
+      "need": 0.62
+    }
+  ],
+  "proprioception": [
+    {
+      "name": "clean_encoder",
+      "label": "Clean encoder",
+      "quality": 0.92,
+      "latency": 0.02,
+      "bias": 0.02
+    },
+    {
+      "name": "encoder_bias",
+      "label": "Encoder bias",
+      "quality": 0.66,
+      "latency": 0.04,
+      "bias": 0.22
+    },
+    {
+      "name": "encoder_dropout",
+      "label": "Encoder dropout",
+      "quality": 0.5,
+      "latency": 0.06,
+      "bias": 0.12
+    },
+    {
+      "name": "delayed_proprioception",
+      "label": "Delayed proprioception",
+      "quality": 0.7,
+      "latency": 0.24,
+      "bias": 0.08
+    },
+    {
+      "name": "camera_proprio_desync",
+      "label": "Camera-proprio desync",
+      "quality": 0.58,
+      "latency": 0.18,
+      "bias": 0.18
+    },
+    {
+      "name": "joint_backlash",
+      "label": "Joint backlash",
+      "quality": 0.62,
+      "latency": 0.08,
+      "bias": 0.24
+    }
+  ],
+  "policies": [
+    {
+      "name": "shadow_removal_inpainting",
+      "label": "Shadow removal/inpainting",
+      "class": "baseline"
+    },
+    {
+      "name": "kinematic_only_self_model",
+      "label": "Kinematic-only self model",
+      "class": "baseline"
+    },
+    {
+      "name": "nonshadow_visual_silhouette",
+      "label": "Non-shadow visual silhouette",
+      "class": "baseline"
+    },
+    {
+      "name": "generic_photometric_residual",
+      "label": "Generic photometric residual",
+      "class": "baseline"
+    },
+    {
+      "name": "robot_self_shadow_state",
+      "label": "Robot self-shadow state",
+      "class": "proposed"
+    },
+    {
+      "name": "oracle_self_state_estimator",
+      "label": "Oracle self-state estimator",
+      "class": "oracle"
+    }
+  ]
+}

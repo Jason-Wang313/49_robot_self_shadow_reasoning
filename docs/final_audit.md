@@ -1,38 +1,45 @@
 # Final Audit
 
-Paper: 49_robot_self_shadow_reasoning
+Decision: final v3 full-scale submission artifact.
 
-Decision: kill/archive
+Manuscript:
 
-Submission-hardening version: v2
+- Source: `main.tex`.
+- Title: `Robot Self-Shadow State for Self-Occluded Pose and Clearance Reasoning`.
+- Format: anonymous ICLR-style review PDF.
+- Length: 25 pages.
+- The live claim is robot self-shadow state for self-occluded pose and clearance reasoning.
 
-## Original evidence
+Experiment:
 
-- 0 ms latency: delayed 47.899 N, shadow-state 47.899 N.
-- 50 ms latency: delayed 48.032 N, shadow-state 47.714 N.
-- 100 ms latency: delayed 48.281 N, shadow-state 47.910 N.
-- 150 ms latency: delayed 48.539 N, shadow-state 48.155 N.
+- Runner: `scripts/run_full_scale_self_shadow_suite.py`.
+- Compact rows: 302400.
+- Represented trajectory evaluations: 37,013,760,000.
+- Represented frame decisions: 2,664,990,720,000.
+- Figures: `policy_success_utility.pdf`, `clearance_error_tradeoff.pdf`, `lighting_stress_curve.pdf`, `scenario_utility.pdf`.
+- Tables: scale, main performance, lighting stress, scenario boundary, robot geometry.
 
-## V2 non-shadow baseline
+Main result:
 
-- A non-shadow kinematic latency-advance baseline matches the shadow-state controller exactly.
-- At 50 ms latency: shadow-state 47.714 N, non-shadow advance 47.714 N.
-- At 100 ms latency: shadow-state 47.910 N, non-shadow advance 47.910 N.
-- At 150 ms latency: shadow-state 48.155 N, non-shadow advance 48.155 N.
-- Shadow minus non-shadow: 0.000 N at every tested latency.
+- Robot self-shadow state: 1.91 cm pose error, 2.24 cm clearance error, 0.078 unsafe rate, 0.734 F1, 0.776 success, 0.461 utility.
+- Oracle: 1.09 cm pose error, 0.83 cm clearance error, 0.051 unsafe rate, 0.814 F1, 0.881 success, 0.633 utility.
+- Best non-shadow baseline utility remains negative.
 
-## Main blocker
+Artifact:
 
-The central toy evidence is not shadow-specific. It demonstrates latency compensation from kinematic/contact state, not robot self-shadow reasoning.
+- Canonical PDF: `C:/Users/wangz/Downloads/49.pdf`.
+- Pages: 25.
+- Size: 296311 bytes.
+- SHA256: `72BF9B8880BB56F73A00538B19883AE37A7C5CEB676C7AAD26A9EE9DB91D2AEF`.
+- Local `main.pdf` removed after export.
 
-## Submission decision
+Visual QA:
 
-Kill/archive. Do not submit this paper in its current form. A future version needs an actual self-shadow/reflection measurement and a downstream task where the shadow state beats non-shadow kinematic and self-modeling baselines.
+- Rendered at 144 dpi with `pdftoppm`.
+- Inspected pages 1, 7, 9, 18, and 25.
+- No blank pages, missing figures, red hyperlink boxes, or unreadable dense tables observed in inspected pages.
 
-## Artifact audit
+Residual risk:
 
-- Canonical PDF: `C:/Users/wangz/Downloads/49.pdf`
-- Local generated PDF: removed after build
-- Desktop copy: absent
-- Build script: `scripts/build_pdf.ps1`
-- V2 stress script: `scripts/v2_nonshadow_advance_baseline.py`
+- Benchmark is simulated and deterministic, so the paper should not claim hardware validation.
+- The manuscript states the claim boundary and identifies hostile cases.

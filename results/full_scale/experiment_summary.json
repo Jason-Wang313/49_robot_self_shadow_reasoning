@@ -1,0 +1,72 @@
+{
+  "paper": 49,
+  "condition_rows": 302400,
+  "policy_summary": [
+    {
+      "policy": "shadow_removal_inpainting",
+      "hidden_pose_error_cm": "4.418978",
+      "clearance_error_cm": "4.896047",
+      "unsafe_clearance_rate": "0.385882",
+      "false_external_shadow_rate": "0.175578",
+      "safe_action_success": "0.448266",
+      "self_occlusion_f1": "0.511442",
+      "utility": "-0.147563",
+      "oracle_regret": "0.780510"
+    },
+    {
+      "policy": "kinematic_only_self_model",
+      "hidden_pose_error_cm": "4.560478",
+      "clearance_error_cm": "5.018499",
+      "unsafe_clearance_rate": "0.395843",
+      "false_external_shadow_rate": "0.103043",
+      "safe_action_success": "0.439070",
+      "self_occlusion_f1": "0.505877",
+      "utility": "-0.163230",
+      "oracle_regret": "0.796176"
+    },
+    {
+      "policy": "nonshadow_visual_silhouette",
+      "hidden_pose_error_cm": "4.421065",
+      "clearance_error_cm": "4.897853",
+      "unsafe_clearance_rate": "0.379517",
+      "false_external_shadow_rate": "0.164057",
+      "safe_action_success": "0.451076",
+      "self_occlusion_f1": "0.514610",
+      "utility": "-0.140923",
+      "oracle_regret": "0.773870"
+    },
+    {
+      "policy": "generic_photometric_residual",
+      "hidden_pose_error_cm": "4.438375",
+      "clearance_error_cm": "4.912832",
+      "unsafe_clearance_rate": "0.361274",
+      "false_external_shadow_rate": "0.338621",
+      "safe_action_success": "0.443728",
+      "self_occlusion_f1": "0.547159",
+      "utility": "-0.154573",
+      "oracle_regret": "0.787519"
+    },
+    {
+      "policy": "robot_self_shadow_state",
+      "hidden_pose_error_cm": "1.905631",
+      "clearance_error_cm": "2.243563",
+      "unsafe_clearance_rate": "0.078095",
+      "false_external_shadow_rate": "0.056296",
+      "safe_action_success": "0.776133",
+      "self_occlusion_f1": "0.734119",
+      "utility": "0.460915",
+      "oracle_regret": "0.172031"
+    },
+    {
+      "policy": "oracle_self_state_estimator",
+      "hidden_pose_error_cm": "1.094078",
+      "clearance_error_cm": "0.825432",
+      "unsafe_clearance_rate": "0.050876",
+      "false_external_shadow_rate": "0.036387",
+      "safe_action_success": "0.881436",
+      "self_occlusion_f1": "0.814157",
+      "utility": "0.632946",
+      "oracle_regret": "0.000000"
+    }
+  ]
+}
