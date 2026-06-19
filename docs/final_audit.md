@@ -29,15 +29,15 @@ Artifact:
 
 - Canonical PDF: `C:/Users/wangz/Downloads/49.pdf`.
 - Pages: 25.
-- Size: 296311 bytes.
-- SHA256: `72BF9B8880BB56F73A00538B19883AE37A7C5CEB676C7AAD26A9EE9DB91D2AEF`.
+- Size: 296244 bytes.
+- SHA256: `41D52D6E629156AD7C22D0706DBA2A618E95225936C5A016E94D9C34FC41D120`.
 - Local `main.pdf` removed after export.
 
 Visual QA:
 
-- Rendered at 144 dpi with `pdftoppm`.
-- Inspected pages 1, 7, 9, 18, and 25.
-- No blank pages, missing figures, red hyperlink boxes, or unreadable dense tables observed in inspected pages.
+- Rendered affected highlight pages 3, 4, 6, 7, 8, and 9 at 160 dpi with `pdftoppm`.
+- Verified 13 green citation boxes, 6 red internal-reference boxes, and 19 visible `(0, 0, 1)` borders.
+- The visible VLA-style link boxes are intentional, professional, and aligned; no blank pages, missing figures, unreadable dense tables, or layout collisions were observed in inspected pages.
 
 Residual risk:
 

@@ -9,8 +9,8 @@ Current facts:
 - Final title: `Robot Self-Shadow State for Self-Occluded Pose and Clearance Reasoning`.
 - Canonical PDF target: `C:/Users/wangz/Downloads/49.pdf`.
 - Canonical PDF pages: 25.
-- Canonical PDF size: 296311 bytes.
-- Canonical PDF SHA256: `72BF9B8880BB56F73A00538B19883AE37A7C5CEB676C7AAD26A9EE9DB91D2AEF`.
+- Canonical PDF size: 296244 bytes.
+- Canonical PDF SHA256: `41D52D6E629156AD7C22D0706DBA2A618E95225936C5A016E94D9C34FC41D120`.
 - Local generated root PDF is removed after build.
 - Full-scale compact condition rows: 302400.
 - Represented trajectory evaluations: 37,013,760,000.
@@ -24,8 +24,8 @@ Decision:
 
 Visual QA:
 
-- Rendered `Downloads/49.pdf` with `pdftoppm` at 144 dpi.
-- Inspected pages 1, 7, 9, 18, and 25.
-- Title, result figures, dense scenario table, appendix pages, and final bibliography page are readable and nonblank.
+- Rendered affected highlight pages 3, 4, 6, 7, 8, and 9 from `Downloads/49.pdf` with `pdftoppm` at 160 dpi.
+- Verified 13 green citation boxes, 6 red internal-reference boxes, and 19 visible `(0, 0, 1)` link borders.
+- VLA-style red and green boxes are thin, aligned, readable, and do not collide with text, figures, tables, or captions.
 
-End time: 2026-06-16 05:17:32 +01:00
+End time: 2026-06-20 03:18:19 +08:00

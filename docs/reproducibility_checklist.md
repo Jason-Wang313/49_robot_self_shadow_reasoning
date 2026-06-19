@@ -16,11 +16,11 @@ Expected PDF artifact:
 
 - Path: `C:/Users/wangz/Downloads/49.pdf`.
 - Pages: 25.
-- SHA256: `72BF9B8880BB56F73A00538B19883AE37A7C5CEB676C7AAD26A9EE9DB91D2AEF`.
+- SHA256: `41D52D6E629156AD7C22D0706DBA2A618E95225936C5A016E94D9C34FC41D120`.
 - Local `main.pdf`: absent after build.
 
 Visual QA:
 
-- Render PDF pages with `pdftoppm -png -r 144`.
-- Inspect title page, main result figure page, dense table page, appendix page, and final page.
-- Confirm generated figures are nonblank and table text fits.
+- Render affected highlight pages with `pdftoppm -png -r 160`.
+- Inspect pages 3, 4, 6, 7, 8, and 9.
+- Confirm VLA-style green citation boxes and red internal-reference boxes are thin, aligned, readable, and do not collide with text, figures, tables, or captions.
