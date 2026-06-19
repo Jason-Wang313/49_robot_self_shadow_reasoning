@@ -16,4 +16,5 @@ v3:
 - Generated new CSV summaries, LaTeX tables, and figures.
 - Rewrote manuscript to 25 pages with detailed appendices.
 - Exported final PDF to `C:/Users/wangz/Downloads/49.pdf`.
-- Final SHA256: `72BF9B8880BB56F73A00538B19883AE37A7C5CEB676C7AAD26A9EE9DB91D2AEF`.
+- Hardened hyperlink styling to VLA-style visible green citation boxes and red internal-reference boxes.
+- Final SHA256: `41D52D6E629156AD7C22D0706DBA2A618E95225936C5A016E94D9C34FC41D120`.

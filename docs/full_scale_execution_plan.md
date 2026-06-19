@@ -60,6 +60,6 @@ Policies:
 - Proposed method: 1.91 cm pose error, 2.24 cm clearance error, 0.078 unsafe rate, 0.734 F1, 0.776 success, 0.461 utility.
 - Oracle: 1.09 cm pose error, 0.83 cm clearance error, 0.051 unsafe rate, 0.814 F1, 0.881 success, 0.633 utility.
 - PDF pages: 25.
-- PDF size: 296311 bytes.
-- PDF SHA256: `72BF9B8880BB56F73A00538B19883AE37A7C5CEB676C7AAD26A9EE9DB91D2AEF`.
-- Visual QA: pages 1, 7, 9, 18, and 25 rendered at 144 dpi and inspected.
+- PDF size: 296244 bytes.
+- PDF SHA256: `41D52D6E629156AD7C22D0706DBA2A618E95225936C5A016E94D9C34FC41D120`.
+- Visual QA: affected highlight pages 3, 4, 6, 7, 8, and 9 rendered at 160 dpi and inspected; VLA-style green citation boxes and red internal-reference boxes are visible, thin, aligned, and readable.
